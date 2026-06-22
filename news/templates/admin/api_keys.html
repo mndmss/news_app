@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API-ключи — Админ-панель</title>
+    {% load static %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-light min-vh-100 d-flex flex-column">
+    <nav class="navbar bg-white border-bottom border-2 border-primary shadow-sm">
+        <div class="container">
+            <h1 class="navbar-brand mb-0 fs-5 fw-bold">
+                <i class="bi bi-key me-2"></i>API-ключи
+            </h1>
+            <div class="d-flex align-items-center gap-2">
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>К постам
+                </a>
+                <form method="post" action="{% url 'admin_api_key_create' %}" class="d-flex align-items-center gap-2 m-0">
+                    {% csrf_token %}
+                    <input type="text" name="name" placeholder="Название ключа" class="form-control form-control-sm" style="width:180px;" required>
+                    <button type="submit" class="btn btn-primary btn-sm">Создать</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-4 flex-grow-1">
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        {% if keys %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle bg-white rounded shadow-sm overflow-hidden">
+                    <thead class="table-primary">
+                        <tr>
+                            <th class="ps-3">ID</th>
+                            <th>Название</th>
+                            <th>Ключ</th>
+                            <th>Статус</th>
+                            <th>Дата создания</th>
+                            <th class="text-end pe-3">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for k in keys %}
+                            <tr>
+                                <td class="ps-3 text-secondary">{{ k.id }}</td>
+                                <td>{{ k.name }}</td>
+                                <td><code class="small">{{ k.key }}</code></td>
+                                <td>
+                                    {% if k.is_active %}
+                                        <span class="badge bg-success">Активен</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Неактивен</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-secondary small">{{ k.created_at|date:"d.m.Y H:i" }}</td>
+                                <td class="text-end pe-3">
+                                    <a href="{% url 'admin_api_key_toggle' k.id %}" class="btn btn-sm btn-outline-secondary"
+                                       title="{% if k.is_active %}Деактивировать{% else %}Активировать{% endif %}">
+                                        {% if k.is_active %}
+                                            <i class="bi bi-pause"></i>
+                                        {% else %}
+                                            <i class="bi bi-play"></i>
+                                        {% endif %}
+                                    </a>
+                                    <a href="{% url 'admin_api_key_delete' k.id %}" class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('Удалить ключ «{{ k.name }}»?');">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-key display-4 d-block mb-3"></i>
+                <p class="fs-5">API-ключей нет. Создайте первый!</p>
+            </div>
+        {% endif %}
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

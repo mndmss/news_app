@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} — Админ-панель</title>
+    {% load static %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'news/css/custom.css' %}">
+</head>
+<body class="bg-light min-vh-100 d-flex flex-column">
+    <nav class="navbar bg-white border-bottom border-2 border-primary shadow-sm">
+        <div class="container">
+            <h1 class="navbar-brand mb-0 fs-5 fw-bold">{{ title }}</h1>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Назад к списку
+            </a>
+        </div>
+    </nav>
+
+    <main class="container py-4 flex-grow-1">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form method="post" id="post-form">
+                    {% csrf_token %}
+
+                    {% if error %}
+                        <div class="alert alert-danger py-2">{{ error }}</div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Заголовок</label>
+                        <input type="text" id="title" name="title" class="form-control"
+                               value="{{ post.title|default:'' }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Содержание</label>
+                        <textarea id="content" name="content" class="form-control" rows="12">{{ post.content|default:'' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Медиафайлы</label>
+                        <div class="media-upload-zone" id="drop-zone">
+                            <button type="button" class="upload-close-btn" id="clear-uploads" title="Очистить" style="display: none;">
+                                <i class="bi bi-x"></i>
+                            </button>
+                            <div class="upload-box">
+                                <i class="bi bi-cloud-arrow-up" style="font-size:48px; color:#b0b9c8;"></i>
+                                <p class="upload-text text-muted mb-0">Перетащите файлы или нажмите для выбора</p>
+                            </div>
+                            <input type="file" id="file-input" multiple hidden
+                                   accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip">
+                            <p class="upload-hint text-secondary small mt-2 mb-0">JPG, PNG, GIF, MP4, PDF, DOC до 10 МБ</p>
+                            <p class="upload-counter text-secondary small mt-1" id="upload-counter">0 из 10 загружено</p>
+                        </div>
+
+                        <div class="upload-progress d-flex align-items-center gap-2 mt-2" id="upload-progress" style="display: none;">
+                            <div class="progress flex-grow-1" style="height:6px;">
+                                <div class="progress-bar" id="progress-fill" role="progressbar" style="width:0%;"></div>
+                            </div>
+                            <span class="progress-text small text-secondary" id="progress-text">0%</span>
+                        </div>
+
+                        <div class="media-grid" id="media-preview">
+                            {% if post_media %}
+                                {% for item in post_media %}
+                                <div class="media-thumb" data-id="{{ item.media.id }}" data-type="{{ item.media.file_type }}">
+                                    {% if item.media.file_type == 'image' %}
+                                        <img src="{{ MEDIA_URL }}{{ item.media.file_path }}" alt="">
+                                    {% elif item.media.file_type == 'video' %}
+                                        <div class="thumb-placeholder video">
+                                            <i class="bi bi-play-fill" style="font-size:32px; color:white;"></i>
+                                        </div>
+                                    {% else %}
+                                        <div class="thumb-placeholder">{{ item.icon|safe }}</div>
+                                    {% endif %}
+                                    <button type="button" class="remove-btn" onclick="removeMedia({{ item.media.id }})">×</button>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div id="media-ids">
+                        {% if media_ids %}
+                            {% for id in media_ids %}
+                                <input type="hidden" name="media_ids" value="{{ id }}">
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                            <i class="bi bi-floppy me-1"></i>Сохранить
+                        </button>
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_KEY = '{{ api_key }}';
+        const MAX_FILES = 10;
+        let uploadedMedia = [
+            {% if post_media %}
+                {% for item in post_media %}
+                    {id: {{ item.media.id }}, name: '{{ item.media.file_name }}', type: '{{ item.media.file_type }}', url: '{{ MEDIA_URL }}{{ item.media.file_path }}'},
+                {% endfor %}
+            {% endif %}
+        ];
+
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadBox = document.querySelector('.upload-box');
+        const clearBtn = document.getElementById('clear-uploads');
+        const preview = document.getElementById('media-preview');
+        const progress = document.getElementById('upload-progress');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const mediaIdsContainer = document.getElementById('media-ids');
+
+        uploadBox.addEventListener('click', () => fileInput.click());
+
+        clearBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            uploadedMedia.forEach(m => removeMedia(m.id));
+        });
+
+        let uploading = false;
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (uploading) return;
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (uploading) return;
+            handleFiles(fileInput.files);
+            fileInput.value = '';
+        });
+
+        function updateUploadCounter() {
+            const counter = document.getElementById('upload-counter');
+            const count = uploadedMedia.length;
+            counter.textContent = count + ' из ' + MAX_FILES + ' загружено';
+            clearBtn.style.display = count > 0 ? 'flex' : 'none';
+        }
+
+        updateUploadCounter();
+
+        const submitBtn = document.getElementById('submit-btn');
+        const form = document.getElementById('post-form');
+        let submitting = false;
+
+        form.addEventListener('submit', (e) => {
+            if (submitting) {
+                e.preventDefault();
+                return;
+            }
+            updateMediaIds();
+            submitting = true;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Сохранение…';
+        });
+
+        async function handleFiles(files) {
+            if (uploading) return;
+            uploading = true;
+
+            const available = MAX_FILES - uploadedMedia.length;
+            if (available <= 0) {
+                alert('Достигнут лимит в ' + MAX_FILES + ' файлов');
+                uploading = false;
+                return;
+            }
+
+            const filesToUpload = Array.from(files).slice(0, available);
+            let uploaded = 0;
+
+            progress.style.display = 'flex';
+            progressFill.style.width = '0%';
+            progressFill.setAttribute('aria-valuenow', '0');
+            progressText.textContent = '0%';
+
+            for (const file of filesToUpload) {
+                try {
+                    await uploadFile(file);
+                    uploaded++;
+                    const percent = Math.round((uploaded / filesToUpload.length) * 100);
+                    progressFill.style.width = percent + '%';
+                    progressFill.setAttribute('aria-valuenow', percent);
+                    progressText.textContent = percent + '%';
+                } catch (err) {
+                    console.error('Upload error:', err);
+                    alert('Ошибка загрузки файла: ' + file.name);
+                }
+            }
+
+            uploading = false;
+
+            setTimeout(() => {
+                progress.style.display = 'none';
+                updateUploadCounter();
+            }, 500);
+        }
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/api/media/upload/', {
+                method: 'POST',
+                headers: {
+                    'X-API-Key': API_KEY,
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Upload failed');
+            }
+
+            const media = await response.json();
+            uploadedMedia.push(media);
+            addPreviewItem(media);
+            updateMediaIds();
+        }
+
+        function addPreviewItem(media) {
+            const div = document.createElement('div');
+            div.className = 'media-thumb';
+            div.dataset.id = media.id;
+            div.dataset.type = media.file_type;
+
+            let thumbContent = '';
+            if (media.file_type === 'image') {
+                thumbContent = `<img src="${media.url}" alt="">`;
+            } else if (media.file_type === 'video') {
+                thumbContent = `
+                    <div class="thumb-placeholder video">
+                        <i class="bi bi-play-fill" style="font-size:32px; color:white;"></i>
+                    </div>`;
+            } else {
+                thumbContent = `<div class="thumb-placeholder">${getFileIcon(media.mime_type)}</div>`;
+            }
+
+            div.innerHTML = `
+                ${thumbContent}
+                <button type="button" class="remove-btn" onclick="removeMedia(${media.id})">×</button>
+            `;
+
+            preview.appendChild(div);
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes || bytes < 1024) return bytes ? bytes + ' B' : '-';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function removeMedia(id) {
+            uploadedMedia = uploadedMedia.filter(m => m.id !== id);
+            const item = preview.querySelector(`[data-id="${id}"]`);
+            if (item) item.remove();
+            updateMediaIds();
+            updateUploadCounter();
+        }
+
+        function updateMediaIds() {
+            mediaIdsContainer.innerHTML = '';
+            uploadedMedia.forEach(m => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'media_ids';
+                input.value = m.id;
+                mediaIdsContainer.appendChild(input);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getFileIcon(mimeType) {
+            if (mimeType) {
+                if (mimeType.includes('pdf') || mimeType.includes('word') || mimeType.includes('document')) {
+                    return '<i class="bi bi-file-text" style="font-size:32px;"></i>';
+                }
+                if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) {
+                    return '<i class="bi bi-file-spreadsheet" style="font-size:32px;"></i>';
+                }
+                if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) {
+                    return '<i class="bi bi-file-zip" style="font-size:32px;"></i>';
+                }
+                if (mimeType.includes('image')) {
+                    return '<i class="bi bi-file-image" style="font-size:32px;"></i>';
+                }
+                if (mimeType.includes('video')) {
+                    return '<i class="bi bi-file-play" style="font-size:32px;"></i>';
+                }
+            }
+            return '<i class="bi bi-file-earmark" style="font-size:32px;"></i>';
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Новости</title>
+    {% load static %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'news/css/custom.css' %}">
+</head>
+<body class="d-flex flex-column" style="height:100vh; overflow:hidden;">
+    <nav class="navbar sticky-top bg-white border-bottom border-3 border-primary shadow-sm flex-shrink-0" style="height:70px;">
+        <div class="container-fluid px-5">
+            <h1 class="navbar-brand mb-0 fs-4 fw-bold">
+                <i class="bi bi-newspaper me-2"></i>Новости
+            </h1>
+            <div class="d-flex d-lg-none gap-2">
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="offcanvas" data-bs-target="#panel-addresses">
+                    <i class="bi bi-geo-alt"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="offcanvas" data-bs-target="#panel-fuel">
+                    <i class="bi bi-fuel-pump"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid flex-grow-1 overflow-hidden px-5 py-3" style="max-width:1440px; margin:auto;">
+        <div class="row h-100 g-4">
+            <main class="col-lg-8 h-100 d-flex flex-column">
+                <div class="flex-grow-1 overflow-y-auto" style="scrollbar-width:none;">
+                    <div id="posts-container" class="d-flex flex-column gap-4 align-items-center pt-2"></div>
+                    <div id="loading-indicator" class="text-center py-3 text-muted" style="visibility:hidden; height:0; overflow:hidden;">
+                        Загрузка…
+                    </div>
+                    <div id="end-message" class="text-center text-muted py-3" style="display:none;">
+                        Все новости загружены
+                    </div>
+                </div>
+            </main>
+
+            <aside class="col-lg-4 d-none d-lg-block overflow-y-auto" style="scrollbar-width:none;">
+                <div class="position-sticky" style="top:0;">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white fw-bold d-flex align-items-center gap-2 py-3">
+                            <i class="bi bi-geo-alt"></i> Наши адреса
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="d-flex align-items-start gap-2 px-3 py-2 border-bottom">
+                                <i class="bi bi-building flex-shrink-0 mt-1 text-secondary"></i>
+                                <div>
+                                    <strong class="d-block">Главный офис</strong>
+                                    <span class="text-secondary small">г. Москва, ул. Тверская, д. 12, офис 401</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start gap-2 px-3 py-2 border-bottom">
+                                <i class="bi bi-building flex-shrink-0 mt-1 text-secondary"></i>
+                                <div>
+                                    <strong class="d-block">Филиал «Север»</strong>
+                                    <span class="text-secondary small">г. Санкт-Петербург, Невский пр., д. 58</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start gap-2 px-3 py-2 border-bottom">
+                                <i class="bi bi-link-45deg flex-shrink-0 mt-1 text-secondary"></i>
+                                <div>
+                                    <strong class="d-block">Редакция</strong>
+                                    <span class="text-secondary small">г. Казань, ул. Баумана, д. 33</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start gap-2 px-3 py-2 border-bottom">
+                                <i class="bi bi-display flex-shrink-0 mt-1 text-secondary"></i>
+                                <div>
+                                    <strong class="d-block">Корпункт «Юг»</strong>
+                                    <span class="text-secondary small">г. Краснодар, ул. Красная, д. 101</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start gap-2 px-3 py-2">
+                                <i class="bi bi-tv flex-shrink-0 mt-1 text-secondary"></i>
+                                <div>
+                                    <strong class="d-block">Представительство</strong>
+                                    <span class="text-secondary small">г. Новосибирск, Красный пр., д. 77</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white fw-bold d-flex align-items-center gap-2 py-3">
+                            <i class="bi bi-fuel-pump"></i> Цены на бензин
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-borderless mb-0">
+                                <thead>
+                                    <tr class="text-secondary small text-uppercase">
+                                        <th class="ps-3">Марка</th>
+                                        <th>Цена</th>
+                                        <th class="text-end pe-3">Δ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="ps-3"><span class="fuel-badge fuel-92">АИ-92</span></td><td>52.40 ₽</td><td class="fuel-up text-end pe-3">+0.30</td></tr>
+                                    <tr><td class="ps-3"><span class="fuel-badge fuel-95">АИ-95</span></td><td>58.70 ₽</td><td class="fuel-up text-end pe-3">+0.50</td></tr>
+                                    <tr><td class="ps-3"><span class="fuel-badge fuel-98">АИ-98</span></td><td>67.20 ₽</td><td class="fuel-down text-end pe-3">−0.10</td></tr>
+                                    <tr><td class="ps-3"><span class="fuel-badge fuel-100">АИ-100</span></td><td>76.90 ₽</td><td class="fuel-up text-end pe-3">+0.80</td></tr>
+                                    <tr><td class="ps-3"><span class="fuel-badge fuel-dt">ДТ</span></td><td>61.10 ₽</td><td class="fuel-down text-end pe-3">−0.20</td></tr>
+                                </tbody>
+                            </table>
+                            <p class="text-center text-secondary small py-2 mb-0">Обновлено: 8 апреля 2026</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="panel-addresses">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title"><i class="bi bi-geo-alt me-1"></i> Наши адреса</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div class="px-3 py-2 border-bottom"><strong class="d-block">Главный офис</strong><span class="text-secondary small">г. Москва, ул. Тверская, д. 12, офис 401</span></div>
+            <div class="px-3 py-2 border-bottom"><strong class="d-block">Филиал «Север»</strong><span class="text-secondary small">г. Санкт-Петербург, Невский пр., д. 58</span></div>
+            <div class="px-3 py-2 border-bottom"><strong class="d-block">Редакция</strong><span class="text-secondary small">г. Казань, ул. Баумана, д. 33</span></div>
+            <div class="px-3 py-2 border-bottom"><strong class="d-block">Корпункт «Юг»</strong><span class="text-secondary small">г. Краснодар, ул. Красная, д. 101</span></div>
+            <div class="px-3 py-2"><strong class="d-block">Представительство</strong><span class="text-secondary small">г. Новосибирск, Красный пр., д. 77</span></div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="panel-fuel">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title"><i class="bi bi-fuel-pump me-1"></i> Цены на бензин</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <table class="table table-borderless mb-0">
+                <thead><tr class="text-secondary small text-uppercase"><th class="ps-3">Марка</th><th>Цена</th><th class="text-end pe-3">Δ</th></tr></thead>
+                <tbody>
+                    <tr><td class="ps-3"><span class="fuel-badge fuel-92">АИ-92</span></td><td>52.40 ₽</td><td class="fuel-up text-end pe-3">+0.30</td></tr>
+                    <tr><td class="ps-3"><span class="fuel-badge fuel-95">АИ-95</span></td><td>58.70 ₽</td><td class="fuel-up text-end pe-3">+0.50</td></tr>
+                    <tr><td class="ps-3"><span class="fuel-badge fuel-98">АИ-98</span></td><td>67.20 ₽</td><td class="fuel-down text-end pe-3">−0.10</td></tr>
+                    <tr><td class="ps-3"><span class="fuel-badge fuel-100">АИ-100</span></td><td>76.90 ₽</td><td class="fuel-up text-end pe-3">+0.80</td></tr>
+                    <tr><td class="ps-3"><span class="fuel-badge fuel-dt">ДТ</span></td><td>61.10 ₽</td><td class="fuel-down text-end pe-3">−0.20</td></tr>
+                </tbody>
+            </table>
+            <p class="text-center text-secondary small py-2">Обновлено: 8 апреля 2026</p>
+        </div>
+    </div>
+
+    <footer class="flex-shrink-0 text-center text-secondary py-3 small">
+        &copy; {% now "Y" %} Новостной портал
+    </footer>
+
+    <div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+        <button class="lightbox-close" onclick="closeLightbox(event)">×</button>
+        <div class="lightbox-counter" id="lightbox-counter"></div>
+        <button class="lightbox-nav lightbox-prev" id="lightbox-prev">◀</button>
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <img id="lightbox-img" src="" alt="">
+            <video id="lightbox-video" controls></video>
+        </div>
+        <button class="lightbox-nav lightbox-next" id="lightbox-next">▶</button>
+        <div class="lightbox-dots" id="lightbox-dots"></div>
+    </div>
+
+    <script>
+        let lightboxState = {items: [], currentIndex: 0};
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        function openLightbox(url, type, items, index) {
+            lightboxState.items = items || [{url: url, type: type}];
+            lightboxState.currentIndex = index || 0;
+            updateLightboxContent();
+            updateLightboxUI();
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            const item = lightboxState.items[lightboxState.currentIndex];
+            if (item?.type === 'video') {
+                document.getElementById('lightbox-video').play().catch(() => {});
+            }
+        }
+
+        function closeLightbox(e) {
+            if (e && e.target !== e.currentTarget) return;
+            const lb = document.getElementById('lightbox');
+            const video = document.getElementById('lightbox-video');
+            lb.classList.remove('active');
+            video.pause();
+            video.src = '';
+            document.body.style.overflow = '';
+        }
+
+        function updateLightboxContent() {
+            const item = lightboxState.items[lightboxState.currentIndex];
+            const img = document.getElementById('lightbox-img');
+            const video = document.getElementById('lightbox-video');
+            video.pause();
+            img.style.display = 'none';
+            video.style.display = 'none';
+            if (item.type === 'video') {
+                video.src = item.url;
+                video.style.display = 'block';
+                video.play().catch(() => {});
+            } else {
+                img.src = item.url;
+                img.style.display = 'block';
+            }
+        }
+
+        function updateLightboxUI() {
+            const total = lightboxState.items.length;
+            const current = lightboxState.currentIndex + 1;
+            document.getElementById('lightbox-counter').textContent = current + ' / ' + total;
+            document.getElementById('lightbox-prev').style.display = total > 1 ? 'flex' : 'none';
+            document.getElementById('lightbox-next').style.display = total > 1 ? 'flex' : 'none';
+            const dots = document.getElementById('lightbox-dots');
+            if (total > 1) {
+                dots.innerHTML = lightboxState.items.map((_, i) =>
+                    `<span class="lightbox-dot ${i === lightboxState.currentIndex ? 'active' : ''}" onclick="goToMedia(${i})"></span>`
+                ).join('');
+                dots.style.display = 'flex';
+            } else {
+                dots.style.display = 'none';
+            }
+        }
+
+        function nextMedia() {
+            if (lightboxState.currentIndex < lightboxState.items.length - 1) {
+                lightboxState.currentIndex++;
+                updateLightboxContent();
+                updateLightboxUI();
+            }
+        }
+
+        function prevMedia() {
+            if (lightboxState.currentIndex > 0) {
+                lightboxState.currentIndex--;
+                updateLightboxContent();
+                updateLightboxUI();
+            }
+        }
+
+        function goToMedia(index) {
+            lightboxState.currentIndex = index;
+            updateLightboxContent();
+            updateLightboxUI();
+        }
+
+        document.getElementById('lightbox-prev').addEventListener('click', e => { e.stopPropagation(); prevMedia(); });
+        document.getElementById('lightbox-next').addEventListener('click', e => { e.stopPropagation(); nextMedia(); });
+
+        document.addEventListener('keydown', e => {
+            const lb = document.getElementById('lightbox');
+            if (!lb.classList.contains('active')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowRight') nextMedia();
+            if (e.key === 'ArrowLeft') prevMedia();
+        });
+
+        document.getElementById('lightbox').addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
+        document.getElementById('lightbox').addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) nextMedia();
+                else prevMedia();
+            }
+        }, {passive: true});
+
+        const container = document.getElementById('posts-container');
+        const loadingEl = document.getElementById('loading-indicator');
+        const endMessage = document.getElementById('end-message');
+        let page = 1;
+        let loading = false;
+        let hasMore = true;
+
+        const icons = {
+            calendar: '<i class="bi bi-calendar3 me-1"></i>',
+            video: '<i class="bi bi-play-fill" style="font-size:20px; margin-left:3px;"></i>',
+            file: '<i class="bi bi-file-earmark"></i>'
+        };
+
+        function showLoading(show) {
+            loadingEl.style.visibility = show ? 'visible' : 'hidden';
+            loadingEl.style.height = show ? '50px' : '0';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function renderMediaGallery(media) {
+            const visualMedia = media.filter(m => m.file_type !== 'document');
+            const documents = media.filter(m => m.file_type === 'document');
+            let html = '';
+
+            if (visualMedia.length > 0) {
+                if (visualMedia.length === 1) {
+                    html += '<div class="post-media-gallery gallery-single">';
+                    html += renderMediaItem(visualMedia[0], 0);
+                    html += '</div>';
+                } else {
+                    html += '<div class="post-media-gallery gallery-carousel">';
+                    html += '<div class="carousel-container">';
+                    html += '<button class="carousel-btn carousel-prev">◀</button>';
+                    html += '<div class="carousel-track">';
+                    visualMedia.forEach((item, i) => {
+                        html += `<div class="carousel-slide">${renderMediaItem(item, i)}</div>`;
+                    });
+                    html += '</div>';
+                    html += '<button class="carousel-btn carousel-next">▶</button>';
+                    html += '<div class="carousel-dots">';
+                    for (let i = 0; i < visualMedia.length; i++) {
+                        html += `<span class="carousel-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`;
+                    }
+                    html += '</div></div></div>';
+                }
+            }
+
+            if (documents.length > 0) {
+                html += '<div class="post-files">';
+                html += '<div class="post-files-header"><i class="bi bi-paperclip me-1"></i><span>Прикреплённые файлы:</span></div>';
+                html += '<div class="post-files-list">';
+                documents.forEach(item => {
+                    html += `<a href="${item.url}" class="file-link" download="${escapeHtml(item.file_name)}">${icons.file}<span class="file-name">${escapeHtml(item.file_name)}</span><span class="file-size text-secondary small">${formatFileSize(item.file_size)}</span></a>`;
+                });
+                html += '</div></div>';
+            }
+            return html;
+        }
+
+        function renderMediaItem(item, index) {
+            if (item.file_type === 'video') {
+                return `<div class="media-item media-video" data-index="${index}" data-type="video"><video src="${item.url}"></video><div class="media-play-icon">${icons.video}</div></div>`;
+            }
+            return `<div class="media-item media-image" data-index="${index}" data-type="image"><img src="${item.url}" alt="${escapeHtml(item.file_name)}" loading="eager"></div>`;
+        }
+
+        function initCarousels(container) {
+            container.querySelectorAll('.carousel-container').forEach(carousel => {
+                const slides = carousel.querySelectorAll('.carousel-slide');
+                const dots = carousel.querySelectorAll('.carousel-dot');
+                const prevBtn = carousel.querySelector('.carousel-prev');
+                const nextBtn = carousel.querySelector('.carousel-next');
+                let current = 0;
+                slides.forEach((slide, i) => { if (i !== 0) slide.style.display = 'none'; });
+
+                function goTo(index) {
+                    if (index < 0) index = 0;
+                    if (index >= slides.length) index = slides.length - 1;
+                    if (index === current) return;
+                    slides[current].style.display = 'none';
+                    slides[index].style.display = 'block';
+                    current = index;
+                    dots.forEach((dot, i) => dot.classList.toggle('active', i === current));
+                }
+
+                prevBtn.addEventListener('click', e => { e.stopPropagation(); goTo(current - 1); });
+                nextBtn.addEventListener('click', e => { e.stopPropagation(); goTo(current + 1); });
+                dots.forEach(dot => {
+                    dot.addEventListener('click', e => { e.stopPropagation(); goTo(parseInt(dot.dataset.index)); });
+                });
+
+                let tsx = 0, tex = 0;
+                carousel.addEventListener('touchstart', e => { tsx = e.changedTouches[0].screenX; }, {passive: true});
+                carousel.addEventListener('touchend', e => {
+                    tex = e.changedTouches[0].screenX;
+                    const diff = tsx - tex;
+                    if (Math.abs(diff) > 50) {
+                        if (diff > 0) goTo(current + 1);
+                        else goTo(current - 1);
+                    }
+                }, {passive: true});
+            });
+        }
+
+        function renderPost(post) {
+            const article = document.createElement('article');
+            article.className = 'card shadow-sm border-0 post-card';
+            let mediaHtml = post.media?.length ? renderMediaGallery(post.media) : '';
+            article.innerHTML = `
+                <div class="card-body p-4">
+                    ${post.title ? `<h5 class="card-title fw-bold mb-2">${escapeHtml(post.title)}</h5>` : ''}
+                    ${mediaHtml}
+                    ${post.content ? `<div class="post-card-body">${escapeHtml(getPostBody(post))}</div>` : ''}
+                    <div class="post-card-meta mt-3">${icons.calendar} ${formatDate(post.created_at)}</div>
+                </div>`;
+            container.appendChild(article);
+            initCarousels(article);
+        }
+
+        function getPostBody(post) {
+            if (!post.content) return '';
+            if (!post.title) return post.content;
+            const idx = post.content.indexOf('\n');
+            return idx >= 0 ? post.content.substring(idx + 1) : post.content;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(ts) {
+            if (!ts) return '';
+            const d = new Date(ts * 1000);
+            const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}, ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        }
+
+        async function loadPosts() {
+            if (loading || !hasMore) return;
+            loading = true;
+            showLoading(true);
+            try {
+                const resp = await fetch(`/api/posts/?page=${page}&per_page=10`, {
+                    headers: {'X-API-Key': '{{ api_key }}'}
+                });
+                if (!resp.ok) throw new Error('Network error: ' + resp.status);
+                const data = await resp.json();
+                if (data.results?.length) {
+                    data.results.forEach(renderPost);
+                    page++;
+                    hasMore = data.page < data.total_pages;
+                } else {
+                    hasMore = false;
+                }
+                if (!hasMore) endMessage.style.display = 'block';
+            } catch (err) {
+                console.error('Load error:', err);
+            } finally {
+                loading = false;
+                showLoading(false);
+            }
+        }
+
+        const sentinel = document.getElementById('loading-indicator');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && hasMore && !loading) loadPosts();
+            });
+        }, {root: null, rootMargin: '200px', threshold: 0});
+        observer.observe(sentinel);
+
+        container.addEventListener('click', function(e) {
+            const mediaItem = e.target.closest('.media-item');
+            if (mediaItem) {
+                const postCard = mediaItem.closest('.post-card');
+                if (postCard) {
+                    const gallery = postCard.querySelector('.post-media-gallery');
+                    if (gallery) {
+                        const allItems = Array.from(gallery.querySelectorAll('.media-item')).map(item => ({
+                            url: item.querySelector('img, video').src,
+                            type: item.dataset.type
+                        }));
+                        const index = parseInt(mediaItem.dataset.index) || 0;
+                        openLightbox(null, null, allItems, index);
+                    }
+                }
+            }
+        });
+
+        loadPosts();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
